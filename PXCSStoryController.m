@@ -35,6 +35,13 @@
     errorLabel.textAlignment = NSTextAlignmentCenter;
     errorLabel.translatesAutoresizingMaskIntoConstraints = NO;
 
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+      initWithTitle:[NSString stringWithFormat:@"%@ Likes", dict[@"numLikes"]]
+      style:UIBarButtonItemStylePlain
+      target:nil
+      action:nil
+    ];
+
     [self.view addSubview:indicator];
     [self.view addSubview:imageView];
     [self.view addSubview:errorLabel];
