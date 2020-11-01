@@ -2,6 +2,7 @@
 #import "PXCSStoryCell.h"
 #import "UIColor+BackgroundColor.h"
 #import "PXCSStoryController.h"
+#import "NSData+Fetch.h"
 
 @implementation PXCSStoriesController {
 	BOOL _isReloadingStories;
@@ -9,6 +10,12 @@
 	unsigned int _index;
 	NSArray<NSDictionary *> *_cells;
 	NSUInteger _counter;
+}
+
+- (void)openTwitter {
+	[[UIApplication sharedApplication]
+		openURL:[NSURL URLWithString:@"https://twitter.com/pixelomer"]
+	];
 }
 
 - (void)reloadAll {
@@ -22,6 +29,8 @@
 }
 
 - (void)loadMore {
+	NSUInteger counter = _counter;
+
 	// If done loading, stop
 	if (!_hasMore) return;
 
@@ -35,20 +44,11 @@
 	__block unsigned int index = _index;
 	NSMutableArray *newCells = [_cells mutableCopy];
 	NSUInteger oldCount = _cells.count;
-	NSUInteger counter = _counter;
-	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		// Fetch the next page
-		NSURL *URL = [NSURL URLWithString:[NSString
-			stringWithFormat:@"https://bowl.azurewebsites.net/stories/hot/%u",
-			index
-		]];
-		NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
-		NSData *data = [NSURLConnection
-			sendSynchronousRequest:request
-			returningResponse:nil
-			error:nil
-		];
-
+	NSURL *URL = [NSURL URLWithString:[NSString
+		stringWithFormat:@"https://bowl.azurewebsites.net/stories/hot/%u",
+		index
+	]];
+	[NSData fetchDataAtURL:URL completionHandler:^(NSData *data){
 		// Fail without any state changes if null
 		if (!data) {
 			dispatch_async(dispatch_get_main_queue(), ^{
@@ -73,7 +73,8 @@
 					![story isKindOfClass:[NSDictionary class]] ||
 					![story[@"mediaId"] isKindOfClass:[NSString class]] ||
 					![story[@"id"] isKindOfClass:[NSString class]] ||
-					![story[@"creatorUsername"] isKindOfClass:[NSString class]]
+					![story[@"creatorUsername"] isKindOfClass:[NSString class]] ||
+					![story[@"numLikes"] isKindOfClass:[NSNumber class]]
 				) continue;
 
 				// Filter
@@ -110,7 +111,7 @@
 				];
 			}
 		});
-	});
+	}];
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView
@@ -168,12 +169,18 @@
 			registerClass:[PXCSStoryCell class]
 			forCellWithReuseIdentifier:@"cell"
 		];
-		self.title = @"Hot";
+		self.title = @"Stories";
 		self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
 			initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
 			target:self
 			action:@selector(reloadAll)
 		];
+		self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
+      initWithTitle:@"@pixelomer"
+      style:UIBarButtonItemStylePlain
+      target:self
+      action:@selector(openTwitter)
+    ];
 		[self reloadAll];
 	}
 	return self;

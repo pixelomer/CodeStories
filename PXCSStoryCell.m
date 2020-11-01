@@ -8,11 +8,26 @@
   UIImageView *_imageView;
   UILabel *_nameLabel;
   UILabel *_imageLabel;
+  UIImageView *_flairView;
+}
+
+static NSDictionary *_flairs;
+
++ (void)load {
+  if (self == [PXCSStoryCell class]) {
+    _flairs = @{
+      @"react" : [UIImage imageNamed:@"flair_react"],
+      @"angular" : [UIImage imageNamed:@"flair_angular"],
+      @"vue" : [UIImage imageNamed:@"flair_vue"],
+      @"flutter" : [UIImage imageNamed:@"flair_flutter"]
+    };
+  }
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
   if ((self = [super initWithFrame:frame])) {
     _imageView = [UIImageView new];
+    _flairView = [UIImageView new];
     _imageLabel = [UILabel new];
     _nameLabel = [UILabel new];
     _nameLabel.textAlignment = NSTextAlignmentCenter;
@@ -23,6 +38,7 @@
     [self.contentView addSubview:_imageView];
     [self.contentView addSubview:_nameLabel];
     [self.contentView addSubview:_imageLabel];
+    [self.contentView addSubview:_flairView];
   }
   return self;
 }
@@ -49,12 +65,19 @@
     imageSize,
     (imageSize / 2.0)
   );
+  _flairView.frame = CGRectMake(
+    imageX + ((imageSize / 4.0) * 3),
+    10.0 + ((imageSize / 4.0) * 3),
+    imageSize / 4.0,
+    imageSize / 4.0
+  );
   _imageLabel.font = [UIFont boldSystemFontOfSize:imageSize / 2.0];
 }
 
 - (void)prepareForReuse {
   [super prepareForReuse];
   _imageView.image = nil;
+  _flairView.image = nil;
   _imageLabel.hidden = NO;
 }
 
@@ -72,6 +95,11 @@
     }
   ];
   _nameLabel.text = data[@"creatorUsername"];
+  _flairView.image = (
+    [data[@"flair"] isKindOfClass:[NSString class]] ?
+    _flairs[data[@"flair"]] :
+    nil
+  );
   _imageLabel.text = [[data[@"creatorUsername"] substringWithRange:NSMakeRange(0,1)] uppercaseString];
   srand([data[@"creatorUsername"] hash]);
   _imageView.backgroundColor = [UIColor

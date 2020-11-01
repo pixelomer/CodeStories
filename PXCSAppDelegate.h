@@ -2,5 +2,5 @@
 
 @interface PXCSAppDelegate : UIResponder <UIApplicationDelegate>
 @property (nonatomic, strong) UIWindow *window;
-@property (nonatomic, strong) UITabBarController *rootViewController;
+@property (nonatomic, strong) UINavigationController *rootViewController;
 @end
