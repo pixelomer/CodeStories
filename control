@@ -1,0 +1,8 @@
+Package: com.pixelomer.codestories
+Name: CodeStories
+Version: 1.0
+Architecture: iphoneos-arm
+Description: Visual Studio Code story viewer for iOS
+Maintainer: pixelomer
+Author: pixelomer
+Section: Utilities
