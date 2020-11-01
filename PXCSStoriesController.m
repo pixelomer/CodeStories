@@ -12,9 +12,9 @@
 	NSUInteger _counter;
 }
 
-- (void)openTwitter {
+- (void)openGithub {
 	[[UIApplication sharedApplication]
-		openURL:[NSURL URLWithString:@"https://twitter.com/pixelomer"]
+		openURL:[NSURL URLWithString:@"https://github.com/pixelomer/CodeStories"]
 	];
 }
 
@@ -176,10 +176,10 @@
 			action:@selector(reloadAll)
 		];
 		self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc]
-      initWithTitle:@"@pixelomer"
+      initWithTitle:@"Source"
       style:UIBarButtonItemStylePlain
       target:self
-      action:@selector(openTwitter)
+      action:@selector(openGithub)
     ];
 		[self reloadAll];
 	}
