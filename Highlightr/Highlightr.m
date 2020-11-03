@@ -142,16 +142,17 @@
  - returns: NSAttributedString with the detected code highlighted.
  */
 - (NSAttributedString *)highlight:(NSString *)code as:(NSString *)languageName fastRender:(BOOL)fastRender {
-    JSValue *ret;
+    NSString *string = nil;;
     if (languageName) {
-        ret = [self.hljs invokeMethod:@"highlight" withArguments:@[languageName, code, @(self.ignoreIllegals)]];
+        if ([[self.hljs invokeMethod:@"getLanguage" withArguments:@[languageName]] isUndefined]) {
+            string = code;
+        }
+        else {
+            string = [self.hljs invokeMethod:@"highlight" withArguments:@[languageName, code, @(self.ignoreIllegals)]][@"value"].toString;
+        }
     } else {
-        // language auto detection
-        ret = [self.hljs invokeMethod:@"highlightAuto" withArguments:@[code]];
+        string = [self.hljs invokeMethod:@"highlightAuto" withArguments:@[code]][@"value"].toString;
     }
-
-    JSValue *res = ret[@"value"];
-    NSString *string = res.toString;
     if (!string) {
         return nil;
     }
