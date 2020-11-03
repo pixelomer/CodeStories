@@ -45,7 +45,7 @@
 	NSMutableArray *newCells = [_cells mutableCopy];
 	NSUInteger oldCount = _cells.count;
 	NSURL *URL = [NSURL URLWithString:[NSString
-		stringWithFormat:@"https://bowl.azurewebsites.net/stories/hot/%u",
+		stringWithFormat:@"https://bowl.azurewebsites.net/text-stories/hot/%u",
 		index
 	]];
 	[NSData fetchDataAtURL:URL completionHandler:^(NSData *data){
@@ -71,16 +71,10 @@
 				// Check dictionary's contents and data
 				if (
 					![story isKindOfClass:[NSDictionary class]] ||
-					![story[@"mediaId"] isKindOfClass:[NSString class]] ||
 					![story[@"id"] isKindOfClass:[NSString class]] ||
 					![story[@"creatorUsername"] isKindOfClass:[NSString class]] ||
-					![story[@"numLikes"] isKindOfClass:[NSNumber class]]
+					![story[@"creatorAvatarUrl"] isKindOfClass:[NSString class]]
 				) continue;
-
-				// Filter
-				if ([story[@"creatorUsername"] isEqualToString:@"bbeenniiee"]) {
-					continue;
-				}
 
 				// Add the dictionary to the cells array
 				[newCells addObject:story];
