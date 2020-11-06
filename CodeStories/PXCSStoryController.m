@@ -4,20 +4,51 @@
 #import "UIColor+BackgroundColor.h"
 
 @implementation PXCSStoryController {
-  NSArray *_frames;
+  NSArray<NSArray *> *_frames;
   NSTimer *_timer;
   NSUInteger _index;
   UITextView *_codeView;
   NSString *_originalCode;
+  NSAttributedString *_lastFrame;
+  UIView *_progressView;
   NSString *_language;
+  NSAttributedString *_previousFrame;
   NSMutableString *_currentCode;
+  BOOL _paused;
 }
 
-static Highlightr *highlighter;
+static NSAttributedString *_space;
+static Highlightr *_highlighter;
+
++ (NSArray<UIBarButtonItem *> *)centeredTextForToolbar:(NSString *)text {
+  return @[
+    [[UIBarButtonItem alloc]
+      initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+      target:nil
+      action:nil
+    ],
+    [[UIBarButtonItem alloc]
+      initWithTitle:text
+      style:UIBarButtonItemStylePlain
+      target:nil
+      action:nil
+    ],
+    [[UIBarButtonItem alloc]
+      initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+      target:nil
+      action:nil
+    ]
+  ];
+}
 
 + (void)load {
   if (self == [PXCSStoryController class]) {
-    highlighter = [[Highlightr alloc] initWithThemeString:@"vs2015"];
+    _highlighter = [[Highlightr alloc] initWithThemeString:@"vs2015"];
+    _space = [_highlighter
+      highlight:@" "
+      as:@"plaintext"
+      fastRender:YES
+    ];
   }
 }
 
@@ -37,30 +68,106 @@ static Highlightr *highlighter;
   [self.navigationController setToolbarHidden:YES animated:NO];
 }
 
-- (void)showNextFrame:(id)sender {
-  if (++_index >= _frames.count) {
-    _index = 0;
-    _currentCode = [_originalCode mutableCopy];
+- (UIBarButtonItem *)pauseResumeButton {
+  return [[UIBarButtonItem alloc]
+    initWithTitle:(_paused ? @"Resume" : @"Pause")
+    style:UIBarButtonItemStylePlain
+    target:self
+    action:@selector(togglePauseResume:)
+  ];
+}
+
+// Recordings are assumed to be less than an hour long.
+- (UIBarButtonItem *)currentFrameButton {
+  unsigned long secondsRemaining = (_frames.count - _index) / 20;
+  UIBarButtonItem *button = [[UIBarButtonItem alloc]
+    initWithTitle:[NSString
+      stringWithFormat:@"-%02lu:%02lu",
+      (secondsRemaining / 60) % 60,
+      secondsRemaining % 60
+    ]
+    style:UIBarButtonItemStylePlain
+    target:nil
+    action:nil
+  ];
+  if (@available(iOS 13.0, *)) {
+    button.tintColor = [UIColor labelColor];
   }
-  for (NSArray *change in _frames[_index]) {
-    [_currentCode
-      replaceCharactersInRange:NSMakeRange(
+  else {
+    button.tintColor = [UIColor blackColor];
+  }
+  button.enabled = NO;
+  return button;
+}
+
+- (void)updateToolbarItems {
+  self.toolbarItems = @[
+    [self pauseResumeButton],
+    (
+      (self.toolbarItems.count > 1) ?
+      self.toolbarItems[1] :
+      [[UIBarButtonItem alloc]
+        initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+        target:nil
+        action:nil
+      ]
+    ),
+    [self currentFrameButton]
+  ];
+}
+
+- (void)togglePauseResume:(id)sender {
+  _paused = !_paused;
+  if (sender) {
+    [self updateToolbarItems];
+  }
+}
+
+- (void)resetAnimation {
+  _index = 0;
+  _lastFrame = nil;
+  _currentCode = [_originalCode mutableCopy];
+}
+
+- (void)showNextFrame:(id)sender {
+  if (_paused) return;
+  if (++_index >= _frames.count) {
+    [self resetAnimation];
+    [self updateToolbarItems];
+  }
+  if (_frames[_index].count || !_lastFrame) {
+    for (NSArray *change in _frames[_index]) {
+      NSRange range = NSMakeRange(
         [(NSNumber *)(change[0]) unsignedIntegerValue],
         [(NSNumber *)(change[1]) unsignedIntegerValue]
-      )
-      withString:change[2]
+      );
+      if ((range.location + range.length) > _currentCode.length) {
+        [_timer invalidate];
+        _timer = nil;
+        _paused = YES;
+        self.toolbarItems = [self.class centeredTextForToolbar:@"Playback error"];
+        return;
+      }
+      [_currentCode
+        replaceCharactersInRange:range
+        withString:change[2]
+      ];
+    }
+    _lastFrame = [_highlighter
+      highlight:_currentCode
+      as:_language
+      fastRender:YES
     ];
   }
-  _codeView.attributedText = [highlighter
-    highlight:_currentCode
-    as:_language
-    fastRender:YES
-  ];
+  _codeView.attributedText = _lastFrame;
+  if ((_index % 20) == 19) {
+    [self updateToolbarItems];
+  }
 }
 
 - (instancetype)initWithData:(NSDictionary *)dict {
   if ((self = [super init])) {  
-    self.title = [NSString stringWithFormat:@"%@'s Story",
+    self.title = [NSString stringWithFormat:@"%@",
       dict[@"creatorUsername"]
     ];
     self.view.backgroundColor = [UIColor stories_backgroundColor];
@@ -182,10 +289,12 @@ static Highlightr *highlighter;
                         change[@"text"]
                       ]];
                     }
+                    if (![frames isKindOfClass:[NSMutableArray class]]) break;
                   }
-                  if (![frames isKindOfClass:[NSMutableArray class]]) break;
                 }
-                if (![frames isKindOfClass:[NSMutableArray class]]) break;
+                if (![frames isKindOfClass:[NSMutableArray class]]) {
+                  break;
+                }
                 [frames addObject:changes.copy];
               }
             }
@@ -201,13 +310,16 @@ static Highlightr *highlighter;
       dispatch_async(dispatch_get_main_queue(), ^{
         [indicator removeFromSuperview];
         if (success) {
-          _codeView.attributedText = [highlighter
+          _codeView.attributedText = [_highlighter
             highlight:dict[@"text"]
             as:dict[@"programmingLanguageId"]
             fastRender:YES
           ];
           self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
-            initWithTitle:[NSString stringWithFormat:@"%@ Likes", dict[@"numLikes"]]
+            initWithTitle:[NSString stringWithFormat:@"%@ Like%@",
+              dict[@"numLikes"],
+              [dict[@"numLikes"] isEqual:@(1)] ? @"" : @"s"
+            ]
             style:UIBarButtonItemStylePlain
             target:nil
             action:nil
@@ -215,8 +327,9 @@ static Highlightr *highlighter;
           [errorLabel removeFromSuperview];
           _codeView.hidden = NO;
           if (_frames.count > 1) {
-            _index = _frames.count-1;
             _language = dict[@"programmingLanguageId"];
+            [self resetAnimation];
+            [self updateToolbarItems];
             _timer = [NSTimer
               timerWithTimeInterval:(50.0/1000.0)
               target:self
@@ -228,6 +341,11 @@ static Highlightr *highlighter;
               addTimer:_timer
               forMode:NSRunLoopCommonModes
             ];
+          }
+          else {
+            self.toolbarItems = [self.class centeredTextForToolbar:@"No playback available"];
+            self.toolbarItems[1].tintColor = [UIColor labelColor];
+            self.toolbarItems[1].enabled = NO;
           }
         }
         else {
