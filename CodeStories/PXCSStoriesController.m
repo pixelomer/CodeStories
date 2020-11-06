@@ -15,6 +15,8 @@
 - (void)openGithub {
 	[[UIApplication sharedApplication]
 		openURL:[NSURL URLWithString:@"https://github.com/pixelomer/CodeStories"]
+		options:@{}
+		completionHandler:nil
 	];
 }
 
@@ -150,7 +152,7 @@
 
 - (instancetype)init {
 	UICollectionViewFlowLayout *layout = [UICollectionViewFlowLayout new];
-	layout.estimatedItemSize = CGSizeMake(165, 165);
+	layout.estimatedItemSize = CGSizeMake(155, 155);
 	if ((self = [super initWithCollectionViewLayout:layout])) {
 		self.tabBarItem = [[UITabBarItem alloc]
 			initWithTabBarSystemItem:UITabBarSystemItemFeatured

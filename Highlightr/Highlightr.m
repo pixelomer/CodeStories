@@ -162,10 +162,10 @@
         returnString = [self processHTMLString:string];
     } else {
         string = [NSString stringWithFormat:@"<style>%@</style><pre><code class=\"hljs\">%@</code></pre>", self.theme.lightTheme, string];
-        NSDictionary<NSAttributedStringDocumentReadingOptionKey, id> *opt = @{
-                                                                              NSDocumentTypeDocumentOption: NSHTMLTextDocumentType,
-                                                                              NSCharacterEncodingDocumentOption: @(NSUTF8StringEncoding)
-                                                                              };
+        NSDictionary<NSString *, id> *opt = @{
+            @"DocumentType": NSHTMLTextDocumentType,
+            @"CharacterEncoding": @(NSUTF8StringEncoding)
+        };
         NSData *data = [string dataUsingEncoding:NSUTF8StringEncoding];
         [self safeMainSync:^ {
             returnString = [[NSMutableAttributedString alloc] initWithData:data options:opt documentAttributes:nil error:NULL];
