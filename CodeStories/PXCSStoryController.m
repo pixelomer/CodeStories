@@ -17,7 +17,6 @@
   BOOL _paused;
 }
 
-static NSAttributedString *_space;
 static Highlightr *_highlighter;
 
 + (NSArray<UIBarButtonItem *> *)centeredTextForToolbar:(NSString *)text {
@@ -44,11 +43,6 @@ static Highlightr *_highlighter;
 + (void)load {
   if (self == [PXCSStoryController class]) {
     _highlighter = [[Highlightr alloc] initWithThemeString:@"vs2015"];
-    _space = [_highlighter
-      highlight:@" "
-      as:@"plaintext"
-      fastRender:YES
-    ];
   }
 }
 
