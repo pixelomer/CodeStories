@@ -20,7 +20,7 @@
 static Highlightr *_highlighter;
 
 + (NSArray<UIBarButtonItem *> *)centeredTextForToolbar:(NSString *)text {
-  return @[
+  NSArray<UIBarButtonItem *> *items = @[
     [[UIBarButtonItem alloc]
       initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
       target:nil
@@ -38,6 +38,14 @@ static Highlightr *_highlighter;
       action:nil
     ]
   ];
+  if (@available(iOS 13.0, *)) {
+    items[1].tintColor = [UIColor labelColor];
+  }
+  else {
+    items[1].tintColor = [UIColor blackColor];
+  }
+  items[1].enabled = NO;
+  return items;
 }
 
 + (void)load {
@@ -338,8 +346,6 @@ static Highlightr *_highlighter;
           }
           else {
             self.toolbarItems = [self.class centeredTextForToolbar:@"No playback available"];
-            self.toolbarItems[1].tintColor = [UIColor labelColor];
-            self.toolbarItems[1].enabled = NO;
           }
         }
         else {
