@@ -47,7 +47,7 @@
 	NSMutableArray *newCells = [_cells mutableCopy];
 	NSUInteger oldCount = _cells.count;
 	NSURL *URL = [NSURL URLWithString:[NSString
-		stringWithFormat:@"https://bowl.azurewebsites.net/text-stories/hot/%u",
+		stringWithFormat:@"https://vscode-stories-295306.uk.r.appspot.com/text-stories/hot/%u",
 		index
 	]];
 	[NSData fetchDataAtURL:URL completionHandler:^(NSData *data){

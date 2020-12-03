@@ -15,6 +15,8 @@
   NSAttributedString *_previousFrame;
   NSMutableString *_currentCode;
   BOOL _paused;
+  int _speed;
+  int _frameCounter;
 }
 
 static Highlightr *_highlighter;
@@ -70,6 +72,25 @@ static Highlightr *_highlighter;
   [self.navigationController setToolbarHidden:YES animated:NO];
 }
 
+- (void)changeSpeed:(id)sender {
+  if (_speed == 4) {
+    _speed = 1;
+  }
+  else {
+    _speed *= 2;
+  }
+  [self updateToolbarItems];
+}
+
+- (UIBarButtonItem *)speedButton {
+  return [[UIBarButtonItem alloc]
+    initWithTitle:[NSString stringWithFormat:@"%dx", _speed]
+    style:UIBarButtonItemStylePlain
+    target:self
+    action:@selector(changeSpeed:)
+  ];
+}
+
 - (UIBarButtonItem *)pauseResumeButton {
   return [[UIBarButtonItem alloc]
     initWithTitle:(_paused ? @"Resume" : @"Pause")
@@ -105,9 +126,10 @@ static Highlightr *_highlighter;
 - (void)updateToolbarItems {
   self.toolbarItems = @[
     [self pauseResumeButton],
+    [self speedButton],
     (
-      (self.toolbarItems.count > 1) ?
-      self.toolbarItems[1] :
+      (self.toolbarItems.count > 2) ?
+      self.toolbarItems[2] :
       [[UIBarButtonItem alloc]
         initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
         target:nil
@@ -133,6 +155,8 @@ static Highlightr *_highlighter;
 
 - (void)showNextFrame:(id)sender {
   if (_paused) return;
+  if (++_frameCounter >= (4 / _speed)) _frameCounter = 0;
+  else return;
   if (++_index >= _frames.count) {
     [self resetAnimation];
     [self updateToolbarItems];
@@ -169,6 +193,8 @@ static Highlightr *_highlighter;
 
 - (instancetype)initWithData:(NSDictionary *)dict {
   if ((self = [super init])) {  
+    _speed = 1;
+    _frameCounter = 0;
     self.title = [NSString stringWithFormat:@"%@",
       dict[@"creatorUsername"]
     ];
@@ -219,7 +245,7 @@ static Highlightr *_highlighter;
     ]];
     [indicator startAnimating];
     [NSData fetchDataAtURL:[NSURL URLWithString:[NSString
-      stringWithFormat:@"https://bowl.azurewebsites.net/text-story/%@",
+      stringWithFormat:@"https://vscode-stories-295306.uk.r.appspot.com/text-story/%@",
       dict[@"id"]
     ]] completionHandler:^(NSData *data){
       NSDictionary *dict = nil;
@@ -333,7 +359,7 @@ static Highlightr *_highlighter;
             [self resetAnimation];
             [self updateToolbarItems];
             _timer = [NSTimer
-              timerWithTimeInterval:(50.0/1000.0)
+              timerWithTimeInterval:(12.5/1000.0)
               target:self
               selector:@selector(showNextFrame:)
               userInfo:nil
